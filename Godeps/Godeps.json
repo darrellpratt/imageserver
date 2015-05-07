@@ -13,6 +13,10 @@
 			"Rev": "d39885924ac22dcafaa9fd452a3af1261107799d"
 		},
 		{
+			"ImportPath": "github.com/martini-contrib/gzip",
+			"Rev": "01cd70f560c841c6e52b9ba8f09748e18e35e2c4"
+		},
+		{
 			"ImportPath": "github.com/nfnt/resize",
 			"Rev": "ce86eacf2078a173b62f76c703abad3771d51678"
 		}
