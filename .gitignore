@@ -2,3 +2,4 @@ fresh
 gin*
 .DS_Store
 /tmp
+images/*__*jpg

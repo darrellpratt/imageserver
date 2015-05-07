@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/go-martini/martini"
+	"github.com/martini-contrib/gzip"
 	"github.com/nfnt/resize"
 	"image/jpeg"
 	"log"
@@ -11,19 +12,9 @@ import (
 	"strconv"
 )
 
-func HomeHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Hi there, I love %s!", r.URL.Path[1:])
-}
-
-func imageHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("Content-type", "image/jpeg")
-	fmt.Println(r.URL.Path)
-	fmt.Println("into imagehandler")
-	http.ServeFile(w, r, r.URL.Path[1:])
-}
-
 func main() {
 	m := martini.Classic()
+	m.Use(gzip.All())
 	m.Get("/", func() string {
 		return "Hello world!"
 	})
@@ -42,12 +33,16 @@ func main() {
 			file, err := os.Open(imageToOpen)
 			if err != nil {
 				log.Printf("Error on opening image file %s", imgName)
+				http.Error(res, "Error opening image file", 401)
 				//return 404, "Not Found"
+				return
 			}
 			// decode jpeg into image.Image
 			img, err := jpeg.Decode(file)
 			if err != nil {
-				log.Fatal(err)
+				log.Printf("Error on file decode %s", err)
+				http.Error(res, "Error on opening image file", 401)
+				return
 			}
 			file.Close()
 			log.Printf("Width at %s", width)
@@ -58,7 +53,7 @@ func main() {
 			m := resize.Resize(uint(i), 0, img, resize.Bilinear)
 			out, err := os.Create("images/" + newImgName)
 			if err != nil {
-				log.Fatal(err)
+				log.Printf("Unable to create new image file %s", err)
 			}
 			log.Printf(out.Name())
 			defer out.Close()
@@ -68,6 +63,6 @@ func main() {
 			http.ServeFile(res, req, out.Name())
 		}
 	})
-	m.RunOnAddr(":8080")
+	m.Run()
 
 }
