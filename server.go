@@ -18,6 +18,7 @@ func main() {
 	m.Get("/", func() string {
 		return "Hello world!"
 	})
+
 	m.Get("/images/:id/:width", func(params martini.Params, res http.ResponseWriter, req *http.Request) {
 		imgName := params["id"]
 		imageToOpen := "images/" + imgName
