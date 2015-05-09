@@ -78,64 +78,6 @@ func main() {
 		}
 	})
 
-	// 1. check for image locally first,
-	//		a. resize if present and serve if present
-	//		b. if not there,
-	//			i.  if nothing, pull from origin and save locally
-	//			ii. if base file exists, load
-	//		c. resize image
-	//		d. serve new image
-	//
-	m.Get("/images/:id/:width", func(params martini.Params, res http.ResponseWriter, req *http.Request) {
-		reqImageName := params["id"]
-		width := params["width"]
-		var (
-			resizedImage image.Image
-			img          image.Image
-		)
-
-		iWidth, err := strconv.ParseUint(width, 0, 64)
-		if err != nil {
-			log.Printf("error parsing size %s", params["width"])
-		}
-
-		fileRequested, err := getFileWithPath(reqImageName)
-		log.Printf("Requested file %s", fileRequested)
-		if err != nil {
-			http.Error(res, "unable to load file", 401)
-		}
-		// is it local?
-		switch checkLocal(fileRequested, width) {
-		case BASE_FILE_PRESENT:
-			// resize the file and serve
-			img, err = loadLocalImage(reqImageName)
-			if err != nil {
-				http.Error(res, "Error on opening image file", 401)
-				return
-			}
-			resizedImage = getResizedImage(img, iWidth)
-
-		case NO_LOCAL_FILE:
-			// load image remotely
-			img, err = loadRemoteImage(reqImageName)
-			if err != nil {
-				http.Error(res, "Error on opening image file", 401)
-				return
-			}
-			resizedImage = getResizedImage(img, iWidth)
-
-		}
-
-		res.Header().Set("Content-Type", "image/jpeg")
-		encodeError := jpeg.Encode(res, resizedImage, &jpeg.Options{100})
-		if encodeError != nil {
-			res.WriteHeader(500)
-		} else {
-			res.WriteHeader(200)
-		}
-
-	})
-
 	m.Run()
 
 }
