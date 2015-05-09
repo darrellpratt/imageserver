@@ -40,6 +40,12 @@ func main() {
 	m.Get("/images/:id/:width", func(params martini.Params, res http.ResponseWriter, req *http.Request) {
 		reqImageName := params["id"]
 		width := params["width"]
+		var resizedImage image.Image
+
+		iWidth, err := strconv.ParseUint(width, 0, 64)
+		if err != nil {
+			log.Printf("error parsing size %s", params["width"])
+		}
 
 		fileRequested, err := getFileWithPath(reqImageName)
 		log.Printf("Requested file %s", fileRequested)
@@ -48,19 +54,32 @@ func main() {
 		}
 		// is it local?
 		switch checkLocal(fileRequested, width) {
-		case RESIZED_FILE_PRESENT:
-			{
-
-			}
 		case BASE_FILE_PRESENT:
-			{
-
+			// resize the file and serve
+			img, err := loadLocalImage(reqImageName)
+			if err != nil {
+				http.Error(res, "Error on opening image file", 401)
+				return
 			}
+			resizedImage = getResizedImage(img, iWidth)
+
 		case NO_LOCAL_FILE:
-			{
-
+			// load image remotely
+			img, err := loadRemoteImage(reqImageName)
+			if err != nil {
+				http.Error(res, "Error on opening image file", 401)
+				return
 			}
+			resizedImage = getResizedImage(img, iWidth)
 
+		}
+
+		res.Header().Set("Content-Type", "image/jpeg")
+		encodeError := jpeg.Encode(res, resizedImage, &jpeg.Options{100})
+		if encodeError != nil {
+			res.WriteHeader(500)
+		} else {
+			res.WriteHeader(200)
 		}
 
 		// sizedImageName := width + DELIM + ""
@@ -134,6 +153,12 @@ func main() {
 
 }
 
+// resize the image, that's it
+func getResizedImage(img image.Image, width uint64) image.Image {
+	m := resize.Resize(uint(width), 0, img, resize.Bilinear)
+	return m
+}
+
 // save image on local FS
 func saveImageFile(imageFileName string, img image.Image) error {
 	out, err := os.Create(LOCAL_PREFIX + imageFileName)
@@ -193,6 +218,7 @@ func isRemote(imgName string) bool {
 }
 
 // check to see if requeted image is local or remote. if remote pull path element only for requesting code
+// this would change to eventually use a key to map to a url and deny and http on the path
 func getFileWithPath(imgName string) (string, error) {
 	if strings.HasPrefix(imgName, "http") {
 		u, err := url.Parse(imgName)
@@ -206,15 +232,8 @@ func getFileWithPath(imgName string) (string, error) {
 	}
 }
 
-// check to see if file is cached locally with size first, then base if not by size
-// remove width, cache remote
+// check to see if file is cached locally
 func checkLocal(imgName string, width string) int {
-	newImgName := width + "__" + imgName
-	if _, err := os.Stat(LOCAL_PREFIX + newImgName); err == nil {
-		fmt.Printf("resized file exists; serving...")
-		return RESIZED_FILE_PRESENT
-	}
-	// can't find sized file what about base
 	if _, err := os.Stat(LOCAL_PREFIX + imgName); err == nil {
 		fmt.Printf("base file exists; serving...")
 		return BASE_FILE_PRESENT
