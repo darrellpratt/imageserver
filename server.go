@@ -11,7 +11,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"path"
 	"strconv"
 	"strings"
 )
@@ -40,7 +39,10 @@ func main() {
 	m.Get("/images/:id/:width", func(params martini.Params, res http.ResponseWriter, req *http.Request) {
 		reqImageName := params["id"]
 		width := params["width"]
-		var resizedImage image.Image
+		var (
+			resizedImage image.Image
+			img          image.Image
+		)
 
 		iWidth, err := strconv.ParseUint(width, 0, 64)
 		if err != nil {
@@ -56,7 +58,7 @@ func main() {
 		switch checkLocal(fileRequested, width) {
 		case BASE_FILE_PRESENT:
 			// resize the file and serve
-			img, err := loadLocalImage(reqImageName)
+			img, err = loadLocalImage(reqImageName)
 			if err != nil {
 				http.Error(res, "Error on opening image file", 401)
 				return
@@ -65,7 +67,7 @@ func main() {
 
 		case NO_LOCAL_FILE:
 			// load image remotely
-			img, err := loadRemoteImage(reqImageName)
+			img, err = loadRemoteImage(reqImageName)
 			if err != nil {
 				http.Error(res, "Error on opening image file", 401)
 				return
@@ -82,73 +84,8 @@ func main() {
 			res.WriteHeader(200)
 		}
 
-		// sizedImageName := width + DELIM + ""
-
 	})
 
-	m.Get("/blah/images/:id/:width", func(params martini.Params, res http.ResponseWriter, req *http.Request) {
-		imgName := params["id"]
-		fmt.Println(path.Base(imgName))
-		// if strings.HasPrefix(imgName, "http") {
-		// 	//url = Url.Parse
-		// 	imgResponse, err := http.Get(imgName)
-		// 	if err != nil || imgResponse.StatusCode != 200 {
-		// 		http.Error(res, "Unable to fetch remote image", 401)
-		// 	}
-		// 	defer imgResponse.Body.Close()
-		// 	m, err := jpeg.Decode(imgResponse.Body)
-		// 	if err != nil {
-		// 		// handle error
-		// 	}
-
-		// } else {
-
-		// }
-
-		imageToOpen := LOCAL_PREFIX + imgName
-		width := params["width"]
-		newImgName := width + "__" + imgName
-
-		// equivalent to Python's `if os.path.exists(filename)`
-		if _, err := os.Stat(LOCAL_PREFIX + newImgName); err == nil {
-			fmt.Printf("file exists; serving...")
-			http.ServeFile(res, req, LOCAL_PREFIX+newImgName)
-		} else {
-
-			file, err := os.Open(imageToOpen)
-			if err != nil {
-				log.Printf("Error on opening image file %s", imgName)
-				http.Error(res, "Error opening image file", 401)
-				//return 404, "Not Found"
-				return
-			}
-			// decode jpeg into image.Image
-			img, err := jpeg.Decode(file)
-			if err != nil {
-				log.Printf("Error on file decode %s", err)
-				http.Error(res, "Error on opening image file", 401)
-				return
-			}
-			file.Close()
-
-			log.Printf("Width at %s", width)
-			i, err := strconv.ParseUint(width, 0, 64)
-			if err != nil {
-				log.Printf("error parsing size %s", params["width"])
-			}
-			m := resize.Resize(uint(i), 0, img, resize.Bilinear)
-			out, err := os.Create(LOCAL_PREFIX + newImgName)
-			if err != nil {
-				log.Printf("Unable to create new image file %s", err)
-			}
-			log.Printf(out.Name())
-			defer out.Close()
-
-			// write new image to file
-			jpeg.Encode(out, m, nil)
-			http.ServeFile(res, req, out.Name())
-		}
-	})
 	m.Run()
 
 }
