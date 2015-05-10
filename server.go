@@ -69,7 +69,7 @@ func main() {
 		}
 
 		res.Header().Set("Content-Type", "image/jpeg")
-		encodeError := jpeg.Encode(res, resizedImage, &jpeg.Options{100})
+		encodeError := jpeg.Encode(res, resizedImage, nil)
 		if encodeError != nil {
 			res.WriteHeader(500)
 		} else {
