@@ -29,7 +29,6 @@ func main() {
 	})
 
 	m.Get("/size/:width/**", func(params martini.Params, res http.ResponseWriter, req *http.Request) {
-		// return "Hello w: " + params["width"] + " rest: " + params["_1"]
 		reqImageName := params["_1"]
 		width := params["width"]
 		var (
