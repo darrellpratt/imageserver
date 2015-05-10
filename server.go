@@ -21,6 +21,7 @@ const NO_LOCAL_FILE int = 100
 const LOCAL_PREFIX string = "images/"
 const DELIM string = "__"
 
+// test deploy
 func main() {
 	m := martini.Classic()
 	m.Use(gzip.All())
