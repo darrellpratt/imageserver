@@ -25,6 +25,7 @@ const DELIM string = "__"
 func main() {
 	m := martini.Classic()
 	m.Use(gzip.All())
+	m.Use(martini.Logger())
 	m.Get("/", func() string {
 		return "Hello world!"
 	})
@@ -70,11 +71,9 @@ func main() {
 		}
 
 		res.Header().Set("Content-Type", "image/jpeg")
-		encodeError := jpeg.Encode(res, resizedImage, nil)
+		encodeError := jpeg.Encode(res, resizedImage, &jpeg.Options{Quality: 100})
 		if encodeError != nil {
 			res.WriteHeader(500)
-		} else {
-			res.WriteHeader(200)
 		}
 	})
 
