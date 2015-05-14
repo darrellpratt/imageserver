@@ -21,10 +21,14 @@ const NO_LOCAL_FILE int = 100
 const LOCAL_PREFIX string = "images/"
 const DELIM string = "__"
 
-type MetaImage struct {
-	image.Image
-	imageName string
-	width     stringg
+type ImageRef struct {
+	Base    image.Image
+	Updated image.Image
+	Name    string
+}
+
+func (ref *ImageRef) resize(width uint) {
+	ref.Updated = resize.Resize(width, 0, ref.Base, resize.Lanczos2)
 }
 
 // test deploy
@@ -33,22 +37,20 @@ func main() {
 	m.Use(gzip.All())
 	m.Use(martini.Logger())
 	m.Get("/", func() string {
-		return "Hello world!"
+		return "Running..."
 	})
 
 	m.Get("/size/:width/**", func(params martini.Params, res http.ResponseWriter, req *http.Request) {
 		reqImageName := params["_1"]
 		width := params["width"]
 		var (
-			resizedImage image.Image
-			img          image.Image
+			img    image.Image
+			_image ImageRef
 		)
-
 		iWidth, err := strconv.ParseUint(width, 0, 64)
 		if err != nil {
 			log.Printf("error parsing size %s", params["width"])
 		}
-
 		fileRequested, err := getFileWithPath(reqImageName)
 		log.Printf("Requested file %s", fileRequested)
 		if err != nil {
@@ -63,21 +65,13 @@ func main() {
 				http.Error(res, "Error on opening image file", 401)
 				return
 			}
-			resizedImage = getResizedImage(img, iWidth)
-
-		case NO_LOCAL_FILE:
-			// load image remotely
-			img, err = loadRemoteImage(reqImageName)
-			if err != nil {
-				http.Error(res, "Error on opening image file", 401)
-				return
-			}
-			resizedImage = getResizedImage(img, iWidth)
-
+			// resize
+			_image = ImageRef{img, nil, reqImageName}
+			_image.resize(uint(iWidth))
 		}
 
 		res.Header().Set("Content-Type", "image/jpeg")
-		encodeError := jpeg.Encode(res, resizedImage, &jpeg.Options{Quality: 100})
+		encodeError := jpeg.Encode(res, _image.Updated, &jpeg.Options{Quality: 75})
 		if encodeError != nil {
 			res.WriteHeader(500)
 		}
