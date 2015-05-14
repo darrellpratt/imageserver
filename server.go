@@ -28,7 +28,7 @@ type ImageRef struct {
 }
 
 func (ref *ImageRef) resize(width uint) {
-	ref.Updated = resize.Resize(width, 0, ref.Base, resize.Lanczos2)
+	ref.Updated = resize.Resize(width, 0, ref.Base, resize.NearestNeighbor)
 }
 
 // test deploy
