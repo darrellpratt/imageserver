@@ -21,6 +21,7 @@ const RESIZED_FILE_PRESENT int = 20
 const NO_LOCAL_FILE int = 100
 const LOCAL_PREFIX string = "images/"
 const DELIM string = "__"
+const FIRE_SIZE = "https://1x3pk5rd8kch.firesize.com"
 
 type ImageRef struct {
 	Base    image.Image
