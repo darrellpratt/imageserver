@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"runtime"
 	"strconv"
 	"strings"
 )
@@ -28,7 +29,7 @@ type ImageRef struct {
 }
 
 func (ref *ImageRef) resize(width uint) {
-	ref.Updated = resize.Resize(width, 0, ref.Base, resize.NearestNeighbor)
+	ref.Updated = resize.Resize(width, 0, ref.Base, resize.Bicubic)
 }
 
 // test deploy
@@ -41,6 +42,9 @@ func main() {
 	})
 
 	m.Get("/size/:width/**", func(params martini.Params, res http.ResponseWriter, req *http.Request) {
+		procs := runtime.GOMAXPROCS(runtime.NumCPU())
+
+		log.Printf("maxprocs %d", procs)
 		reqImageName := params["_1"]
 		width := params["width"]
 		var (
