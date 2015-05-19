@@ -37,6 +37,9 @@ func main() {
 	m := martini.Classic()
 	m.Use(gzip.All())
 	m.Use(martini.Logger())
+	m.Get("/", func() string {
+		return "Running..."
+	})
 
 	m.Get("/size/:width/**", func(params martini.Params, res http.ResponseWriter, req *http.Request) {
 		procs := runtime.GOMAXPROCS(runtime.NumCPU())
